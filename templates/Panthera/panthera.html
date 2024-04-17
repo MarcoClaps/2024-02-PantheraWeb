@@ -1,0 +1,127 @@
+<!DOCTYPE HTML>
+
+<html>
+
+<head>
+    <!-- head with a title "Panthera" -->
+
+    <title>Panthera Webpage</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+
+    <!-- import scripts -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <!-- import css -->
+    <link rel="stylesheet" type="text/css" href="static/src/css/style.css">
+
+    <!-- background static\src\img\Panthera.jpg  non repeating-->
+    <style>
+        body {
+            background-image: url('static/src/img/Panthera.jpg');
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-size: cover;
+        }
+
+        p {
+            color: black;
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+    <!-- Hides the buttons when the execution is run -->
+    <script>
+        $(document).ready(function () {
+            $('#runPanthera').submit(function () {
+                $('#runPanthera').hide();
+                $('#DownloadTemplate').hide();
+                $('#CaricaFile').hide();
+
+            });
+        });
+    </script>
+
+    <!-- hides the download button after one click -->
+    <script>
+        $(document).ready(function () {
+            $('#FileDownload').submit(function () {
+                $('#FileDownload').hide();
+            });
+        });
+    </script>
+
+</head>
+
+<!-- body with a header "Panthera" and a paragraph "Welcome to Panthera" -->
+
+<body class="is-preload">
+    <!-- Create a button that redirects to the index -->
+    <a href="/">
+        <button type="button">Home</button>
+    </a>
+
+    <h1>Panthera</h1>
+    <p>Benvenuti in Panthera</p>
+
+    <div id="wrapper">
+
+
+        <!-- create a button that opens a template .xlsx file. The button name is "Mostra Template" while the file name is "Template.xlsx" -->
+        <a href="{{ url_for('download_file') }}" class="btn btn-primary">
+            <button type="button" id="DownloadTemplate">
+                Mostra Template
+            </button>
+        </a>
+
+        <br>
+        <br>
+
+
+        <!-- create a form that reads a xlsx file with a buttond and send the info to afunction in main.py -->
+        <div id="CaricaFile">
+            <form action="{{ url_for('upload_file_xls') }}" method="post" enctype="multipart/form-data">
+                <input type="file" name="file" accept=".xlsx">
+                <button type="submit">Carica File</button>
+            </form>
+
+            <!-- create a output text that gathers the message variable -->
+            <p>{{ message }}</p>
+            <p>{{ pos }}</p>
+            <p>{{ crit }}</p>
+            <p>{{ nullVals }}</p>
+        </div>
+
+        <br>
+        <br>
+
+        {% if execVisible %}
+        <!-- Add a button that executes the panthera_main function in py, but also send value through post form -->
+        <form action="{{ url_for('panthera_main') }}" method="post" id="runPanthera">
+            <!-- add a dropdown list with values for the rooftop -->
+            <label for="rooftop">Seleziona il taglio:</label>
+            <select name="rooftop" id="rooftop">
+                <option value="2500">2500</option>
+                <option value="10000">10000</option>
+                <option value="25000">25000</option>
+                <option value="50000">50000</option>
+                <option value="60000">60000</option>
+            </select>
+            <br>
+            <button type="submit">Esegui Panthera</button>
+        </form>
+        {% endif %}
+
+        <!-- if message is "File generato con successo" -->
+        {% if message == "File generato con successo" %}
+        <!-- create a button that opens the file created by the function -->
+        <a href="{{ url_for('panthera_download') }}" class="btn btn-primary">
+            <button type="button" id="FileDownload">Scarica File</button>
+        </a>
+        {% endif %}
+
+
+    </div>
+</body>
+
+</html>
