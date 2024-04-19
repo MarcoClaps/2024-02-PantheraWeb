@@ -28,6 +28,8 @@ from flask import (
     render_template,
     send_file,
     send_from_directory,
+    make_response,
+    jsonify,
 )
 
 from flask_login import (
@@ -45,9 +47,7 @@ app = Flask(__name__)
 global punteggi  # global dataframe
 global OUTPUTFOLDER  # global output folder
 OUTPUTFOLDER = "downloads/Panthera"
-# create the output folder if it does not exist
-if not os.path.exists(OUTPUTFOLDER):
-    os.makedirs(OUTPUTFOLDER)
+
 global ROOFTOP  # global rooftop
 
 
@@ -72,9 +72,14 @@ def download_file():
 
 
 #### Upload and check xlsx file ####
-@app.route("/uploadxls", methods=["POST", "GET"])
+@app.route("/upload", methods=["POST", "GET"])
 def upload_file_xls():
+    # create the output folder if it does not exist
+    if not os.path.exists(OUTPUTFOLDER):
+        os.makedirs(OUTPUTFOLDER)
+
     if request.method == "POST":
+        filesize = request.cookies.get("filesize")
         f = request.files["file"]
         # IF THERE IS NO FILE SELECTED
         if f.filename == "":
@@ -95,8 +100,7 @@ def upload_file_xls():
             # convert xlsx in csv
             df = pd.read_excel(f)
             df.to_csv("uploads/Panthera/panthera.csv", sep=";", index=False)
-            # # save the file
-            # f.save("uploads/Panthera/" + f.filename)
+
             # make the 'runPanthera' html element visible
             return render_template(
                 "Panthera/panthera.html",
@@ -141,39 +145,70 @@ async def panthera_main():
         ROOFTOP = int(request.form["rooftop"])
         print(ROOFTOP)
 
-    # read the only file in the folder
-    mainRoot = "uploads"
-    subroot = "Panthera"
-    path = os.path.join(mainRoot, subroot)
-    files = os.listdir(path)
-    if len(files) == 0:
-        punteggi = pd.DataFrame()
-        return render_template("Panthera/panthera.html", message="Nessun file caricato")
-    else:
-        file = files[0]
+        # read the only file in the folder
+        mainRoot = "uploads"
+        subroot = "Panthera"
         path = os.path.join(mainRoot, subroot)
-        punteggi = pd.read_csv(os.path.join(path, file), sep=";")
+        files = os.listdir(path)
+        if len(files) == 0:
+            punteggi = pd.DataFrame()
+            return render_template("Panthera/panthera.html", message="Nessun file caricato")
+        else:
+            file = files[0]
+            path = os.path.join(mainRoot, subroot)
+            punteggi = pd.read_csv(os.path.join(path, file), sep=";")
 
-    # create Panthera object
-    panthera = Panthera(roof=ROOFTOP, outputFolder=OUTPUTFOLDER, df=punteggi)
-    panthera.main()
+        # create Panthera object
+        panthera = Panthera(roof=ROOFTOP, outputFolder=OUTPUTFOLDER, df=punteggi)
+        info = panthera.main()
 
-    return render_template(
-        "Panthera/panthera.html", message="File generato con successo"
-    )
+        # convert info to string
+        info = str(info)
+        info = info.replace(",", "\n").replace("{", "").replace("}", "").replace("'", "")
+        # split info for better visualization
+        info = info.split("\n")
+        meanMsg = info[0]
+        medianMsg = info[1]
+        modeMsg = info[2]
+        perc10Msg = info[3]
+        perc25Msg = info[4]
+        perc75Msg = info[5]
+        perc90Msg = info[6]
+        # return the html page with the message
+        return render_template(
+            "Panthera/panthera.html",
+            message="File generato con successo",
+            meanMsg=meanMsg,
+            medianMsg=medianMsg,
+            modeMsg=modeMsg,
+            perc10Msg=perc10Msg,
+            perc25Msg=perc25Msg,
+            perc75Msg=perc75Msg,
+            perc90Msg=perc90Msg,
+        )
+    
+    return render_template("Panthera/panthera.html", message="Errore nella scelta del taglio")
 
 
 @app.route("/panthera_download")
 def panthera_download():
-    
     # delete the folder if exists
     if os.path.exists(OUTPUTFOLDER):
         # create a function that takes the output folder, zips it and downloads it
         zipf = shutil.make_archive(OUTPUTFOLDER, "zip", OUTPUTFOLDER)
         shutil.rmtree(OUTPUTFOLDER)
-        return (send_file(zipf, as_attachment=True))
+        return send_file(zipf, as_attachment=True)
     else:
         return render_template("Panthera/panthera.html", message="Nessun file generato")
+
+@app.route("/update_bar", methods=["POST"])
+def update_bar(perc):
+
+    # take the html element with name "perc"
+    perc = request.form["perc"]
+    perc = int(perc)
+    print(perc)
+    
 
 if __name__ == "__main__":
     # app.run()

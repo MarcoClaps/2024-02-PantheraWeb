@@ -76,9 +76,11 @@ class Panthera:
 
         sys.stdout.write("Creazione grafico...\n")
         # plot the graph
-        self.plotGraph(dictValReduced)
+        info = self.plotGraph(dictValReduced)
 
         sys.stdout.write("Esecuzione completata\n")
+
+        return info
 
     def createCombinationsBaseline(self, punteggi):
         """
@@ -234,6 +236,8 @@ class Panthera:
             mean += key * value
             total += value
         mean = mean / total
+        # round the mean to 2 decimal places
+        mean = round(mean, 2)
         print("Mean: ", mean)
         # compute the weighted percentiles and print them
         percentiles = [0.10, 0.25, 0.75, 0.9]
@@ -283,3 +287,16 @@ class Panthera:
             f.write(f"25th percentile: {percentiles[1]}\n")
             f.write(f"75th percentile: {percentiles[2]}\n")
             f.write(f"90th percentile: {percentiles[3]}\n")
+
+        # also save the information in a dictionary
+        info = {
+            "Mean": mean,
+            "Median": median,
+            "Mode": mode,
+            "10th percentile": percentiles[0],
+            "25th percentile": percentiles[1],
+            "75th percentile": percentiles[2],
+            "90th percentile": percentiles[3],
+        }
+
+        return info
